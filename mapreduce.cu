@@ -11,6 +11,35 @@
 #define NUM_BLOCKS 8
 #define BLOCK_SIZE 512
 
+// define map/reduce function type
+typedef int (*map_function_t)(int, int);
+typedef int (*reduce_function_t)(int, int);
+
+__device__ map_function_t map_function = NULL;
+__device__ reduce_function_t reduce_function = NULL;
+
+__device__ int rand(int init0, int init1)
+{
+    // multiply-with-carry RNG
+    init0 = 36969 * (init0 & 65535) + (init0 >> 16);
+    init1 = 18000 * (init1 & 65535) + (init1 >> 16);
+    return (init0 << 16) + init1;  /* 32-bit result */
+}
+
+__device__ int fma0(int op0, int op1)
+{
+    return op0 + op0 * op1;
+}
+
+__device__ int fma1(int op0, int op1)
+{
+    return op1 + op0 * op1;
+}
+
+__device__ int sum(int op0, int op1)
+{
+    return op0 + op1;
+}
 
 __global__ void
 mapreduce(int *array, int count, int *g_cache, int *result)
