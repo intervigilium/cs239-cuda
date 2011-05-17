@@ -151,8 +151,8 @@ prepare_numbers(const char *filename, int **array)
 int
 main(int argc, char *argv[])
 {
-    int opt, host_mode, blocks, threads, array_size, largest;
-    int *array_h, *array_d, *largest_d, *cache_d;
+    int opt, host_mode, blocks, threads, array_size, result;
+    int *array_h, *array_d, *result_d, *cache_d;
     char *filename;
 
 
@@ -200,10 +200,10 @@ main(int argc, char *argv[])
         return 0;
     }
 
-    largest = 0;
+    result = 0;
     if (host_mode) {
         printf("mapreduce using CPU\n");
-        largest = mapreduce_host(array_h, array_size);
+        result = mapreduce_host(array_h, array_size);
     } else {
         printf("mapreduce using CUDA\n");
         // move to device
@@ -211,22 +211,22 @@ main(int argc, char *argv[])
         cudaMemcpy(array_d, array_h, array_size * sizeof(int), cudaMemcpyHostToDevice);
 
         // allocate device only structures
-        cudaMalloc((void **) &largest_d, sizeof(int));
+        cudaMalloc((void **) &result_d, sizeof(int));
         cudaMalloc((void **) &cache_d, blocks * sizeof(int));
 
         // run kernel
-        mapreduce <<< dim_grid, dim_block, threads * sizeof(int) >>> (array_d, array_size, cache_d, largest_d);
+        mapreduce <<< dim_grid, dim_block, threads * sizeof(int) >>> (array_d, array_size, cache_d, result_d);
 
         // retrieve result
-        cudaMemcpy(&largest, largest_d, sizeof(int), cudaMemcpyDeviceToHost);
+        cudaMemcpy(&result, result_d, sizeof(int), cudaMemcpyDeviceToHost);
 
         // cleanup
         cudaFree(array_d);
-        cudaFree(largest_d);
+        cudaFree(result_d);
         cudaFree(cache_d);
     }
 
-    printf("largest number in input: %d\n", largest);
+    printf("mapreduce result: %d\n", largest);
     free(array_h);
 
     return 0;
