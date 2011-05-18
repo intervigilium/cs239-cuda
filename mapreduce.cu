@@ -226,7 +226,7 @@ main(int argc, char *argv[])
         cudaFree(cache_d);
     }
 
-    printf("mapreduce result: %d\n", largest);
+    printf("mapreduce result: %d\n", result);
     free(array_h);
 
     return 0;
