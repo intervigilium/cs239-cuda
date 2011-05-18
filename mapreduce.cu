@@ -87,59 +87,75 @@ template < unsigned int blockSize >
 	}
 }
 
-__global__ void mapreduce(int *array, int count, int *g_cache, int *result)
+__global__ void map(int *array, int size)
 {
-	// gridDim.x is number of blocks
-	// blockDim.x is number of threads per block
-	// b_cache should be equally sized to blockDim.x
-	// g_cache should be equally sized to gridDim.x
-	extern __shared__ int b_cache[];
+	// shared should be equally sized to blockDim.x
+	extern __shared__ int shared[];
 
-	unsigned int tid = blockIdx.x * blockDim.x + threadIdx.x;
-	unsigned int i, thread_work_size, thread_offset;
+	unsigned int tid = threadIdx.x;
+	unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
+	unsigned int grid_size = gridDim.x * blockDim.x;
 
-	if (tid == gridDim.x * blockDim.x - 1) {
-		int normal_work_size = count / (gridDim.x * blockDim.x);
-		thread_offset = tid * normal_work_size;
-		thread_work_size = count - thread_offset;
-	} else {
-		thread_work_size = count / (gridDim.x * blockDim.x);
-		if (thread_work_size < 1) {
-			thread_work_size = 1;
-		}
-		thread_offset = tid * thread_work_size;
+	unsigned int i;
+	unsigned int thread_work_size;
+	unsigned int thread_offset;
+
+	thread_work_size = size / grid_size;
+	thread_offset = id * thread_work_size;
+	if (id == grid_size - 1) {
+		thread_work_size = size - thread_offset;
 	}
 
-	// map section
-	b_cache[threadIdx.x] = array[thread_offset];
+	// do map in shared mem
+	shared[tid] = array[thread_offset];
 	for (i = thread_offset + 1; i < thread_offset + thread_work_size; i++) {
-		b_cache[threadIdx.x] = rand(b_cache[threadIdx.x], array[i]);
+        // current map function is rand
+		array[tid] = rand(shared[tid], shared[tid]);
 	}
+}
+
+__global__ void reduce(int *in_array, int *out_array, int size, int *result)
+{
+	// shared should be equally sized to blockDim.x
+	extern __shared__ int shared[];
+
+	unsigned int tid = threadIdx.x;
+	// double grid size for better efficiency
+	unsigned int id = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
+	unsigned int grid_size = gridDim.x * (blockDim.x * 2);
+
+	unsigned int i;
+	unsigned int thread_work_size;
+	unsigned int thread_offset;
+
+	thread_work_size = size / grid_size;
+	thread_offset = id * thread_work_size;
+	if (id == grid_size - 1) {
+		thread_work_size = size - thread_offset;
+	}
+
+    // first sum
+	int t_sum = (i < n) ? in_array[i] : 0;
+	if (i + blockDim.x < n) {
+        // current reduce function is sum
+		t_sum = sum(in_array[i + blockDim.x], t_sum);
+	}
+
+	shared[tid] = t_sum;
 	__syncthreads();
 
-	// reduce section
-
-	// get the largest number in a block
-	if (threadIdx.x == 0) {
-		int largest = b_cache[0];
-		for (i = 1; i < blockDim.x; i++) {
-			if (b_cache[i] > largest) {
-				largest = b_cache[i];
-			}
+	// do reduction in shared mem
+	for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
+		if (tid < s) {
+            // current reduce function is sum
+            t_sum = sum(t_sum, sdata[tid + s]);
+            sdata[tid = t_sum];
 		}
-		g_cache[blockIdx.x] = largest;
+		__syncthreads();
 	}
-	__syncthreads();
 
-	// get the largest number in all blocks
 	if (tid == 0) {
-		int largest = g_cache[0];
-		for (i = 1; i < gridDim.x; i++) {
-			if (g_cache[i] > largest) {
-				largest = g_cache[i];
-			}
-		}
-		*result = largest;
+		out_array[blockIdx.x] = shared[0];
 	}
 }
 
