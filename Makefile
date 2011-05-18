@@ -47,9 +47,9 @@ CUFILES		:= mapreduce.cu
 # Extra NVCCFLAGS
 #NVCCFLAGS	:= -g -G
 
-CUDA_SDK	:= /opt/cuda-sdk
+ROOTDIR	:= /opt/cuda-sdk/C/common
 
 ################################################################################
 # Rules and targets
 
-include ${CUDA_SDK}/C/common/common.mk
+include ${ROOTDIR}/../common/common.mk
