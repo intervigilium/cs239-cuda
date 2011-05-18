@@ -143,9 +143,19 @@ __global__ void mapreduce(int *array, int count, int *g_cache, int *result)
 	}
 }
 
-void usage()
+void usage(int which)
 {
-	printf("usage: mapreduce [-b blocks|-t threads] <filename>\n");
+	switch (which) {
+	default:
+		printf("usage: mapreduce [-b blocks|-t threads] <filename>\n");
+		break;
+	case 1:
+		printf("mapreduce input format:\nnum count\n1\n...\nn n\n");
+		break;
+	case 2:
+		printf("mapreduce requires >= %d numbers\n", blocks * threads);
+        break:
+	}
 }
 
 int prepare_numbers(const char *filename, int **array)
@@ -195,7 +205,7 @@ int main(int argc, char *argv[])
 			threads = atoi(optarg);
 			break;
 		default:
-			usage();
+			usage(0);
 			return 0;
 		}
 	}
@@ -206,7 +216,7 @@ int main(int argc, char *argv[])
 	if (argc == optind + 1) {
 		filename = argv[optind];
 	} else {
-		usage();
+		usage(0);
 		return 0;
 	}
 
@@ -215,13 +225,11 @@ int main(int argc, char *argv[])
 	array_size = prepare_numbers(filename, &array_h);
 	if (array_size < 0) {
 		free(array_h);
-		printf
-		    ("mapreduce: input file format:\nnum count\nnum1\nnum2\n...\nnum n\n");
+		usage(1);
 		return 0;
 	} else if (array_size <= blocks * threads) {
 		free(array_h);
-		printf("mapreduce: requires at least %d numbers\n",
-		       blocks * threads);
+		usage(2);
 		return 0;
 	}
 
