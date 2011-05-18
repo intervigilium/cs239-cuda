@@ -15,9 +15,6 @@
 typedef int (*map_function_t) (int, int);
 typedef int (*reduce_function_t) (int, int);
 
-__device__ map_function_t map_function = NULL;
-__device__ reduce_function_t reduce_function = NULL;
-
 __device__ int rand(int init0, int init1)
 {
 	// multiply-with-carry RNG
@@ -116,8 +113,7 @@ __global__ void mapreduce(int *array, int count, int *g_cache, int *result)
 	// map section
 	b_cache[threadIdx.x] = array[thread_offset];
 	for (i = thread_offset + 1; i < thread_offset + thread_work_size; i++) {
-		b_cache[threadIdx.x] =
-		    map_function(b_cache[threadIdx.x], array[i]);
+		b_cache[threadIdx.x] = rand(b_cache[threadIdx.x], array[i]);
 	}
 	__syncthreads();
 
