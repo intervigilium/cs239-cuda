@@ -261,10 +261,10 @@ int main(int argc, char *argv[])
 	cudaMalloc((void **)&cache_d, blocks * sizeof(int));
 
 	// run kernel
-	mapreduce <<< dim_grid, dim_block, threads * sizeof(int) >>> (array_d,
-								      array_size,
-								      cache_d,
-								      result_d);
+	map <<< dim_grid, dim_block, threads * sizeof(int) >>> (array_d,
+								array_size,
+								cache_d,
+								result_d);
 
 	// retrieve result
 	cudaMemcpy(&result, result_d, sizeof(int), cudaMemcpyDeviceToHost);
