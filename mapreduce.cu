@@ -153,8 +153,8 @@ void usage(int which)
 		printf("mapreduce input format:\nnum count\n1\n...\nn n\n");
 		break;
 	case 2:
-		printf("mapreduce requires >= %d numbers\n", blocks * threads);
-        break:
+		printf("mapreduce requires numbers >= threads*blocks\n");
+		break;
 	}
 }
 
