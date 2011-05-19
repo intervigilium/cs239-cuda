@@ -197,11 +197,6 @@ int main(int argc, char *argv[])
 		usage(0);
 		return 0;
 	}
-	// need more blocks * threads than input numbers
-	if (max >= blocks * threads) {
-		usage(1);
-		return 0;
-	}
 	// pre-init numbers
 	array = NULL;
 	prepare_numbers(&array, max);
