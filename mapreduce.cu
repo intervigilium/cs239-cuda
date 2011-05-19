@@ -23,9 +23,14 @@ __device__ int rand(int init0, int init1)
 	return (init0 << 16) + init1;	/* 32-bit result */
 }
 
-__device__ int fma0(int op0, int op1)
+__device__ int square(int op)
 {
-	return op0 + op0 * op1;
+    return op * op;
+}
+
+__device__ int mul(int op0, int op1)
+{
+    return op0 * op1;
 }
 
 __device__ int sum(int op0, int op1)
@@ -46,13 +51,13 @@ __global__ void map(int *array, int size)
 	if (id < size) {
 		// do first operation
 		shared[tid] = array[id];
-		array[id] = rand(shared[tid], shared[tid]);
+		array[id] = square(shared[tid]);
 	}
 	if (id + blockDim.x < size) {
 		// do second operation
 		shared[tid + blockDim.x] = array[id + blockDim.x];
 		array[id + blockDim.x] =
-		    rand(shared[tid + blockDim.x], shared[tid + blockDim.x]);
+		    square(shared[tid + blockDim.x]);
 	}
 }
 
