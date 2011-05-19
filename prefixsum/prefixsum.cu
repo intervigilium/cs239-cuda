@@ -182,8 +182,8 @@ int main(int argc, char *argv[])
 		prefixsum(blocks, threads, array, max);
 	}
 
-    // print array
-    print_array(array);
+	// print array
+	print_array(array, max);
 
 	free(array);
 
