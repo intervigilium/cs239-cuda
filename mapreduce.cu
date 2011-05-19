@@ -35,54 +35,40 @@ __device__ int sum(int op0, int op1)
 
 __global__ void map(int *array, int size)
 {
-	// shared should be equally sized to blockDim.x
+	// gridDim.x * blockDim.x >= size / 2
+	// shared should be sized to blockDim.x * 2
 	extern __shared__ int shared[];
 
 	unsigned int tid = threadIdx.x;
-	unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
-	unsigned int grid_size = gridDim.x * blockDim.x;
-
-	unsigned int i;
-	unsigned int thread_work_size;
-	unsigned int thread_offset;
-
-	thread_work_size = size / grid_size;
-	thread_offset = id * thread_work_size;
-	if (id == grid_size - 1) {
-		thread_work_size = size - thread_offset;
-	}
+	unsigned int id = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
 
 	// do map in shared mem
-	shared[tid] = array[thread_offset];
-	for (i = thread_offset + 1; i < thread_offset + thread_work_size; i++) {
-        // current map function is rand
-		array[tid] = rand(shared[tid], shared[tid]);
+	if (id < size) {
+		// do first operation
+		shared[tid] = array[id];
+		array[id] = rand(shared[tid], shared[tid]);
+	}
+	if (id + blockDim.x < size) {
+		// do second operation
+		shared[tid + blockDim.x] = array[id + blockDim.x];
+		array[id + blockDim.x] =
+		    rand(shared[tid + blockDim.x], shared[tid + blockDim.x]);
 	}
 }
 
-__global__ void reduce(int *in_array, int *out_array, int size, int *result)
+__global__ void reduce(int *in_array, int *out_array, int size)
 {
-	// shared should be equally sized to blockDim.x
+	// gridDim.x * blockDim.x >= size / 2
+	// shared should be sized to blockDim.x
 	extern __shared__ int shared[];
 
 	unsigned int tid = threadIdx.x;
-	// double grid size for better efficiency
 	unsigned int id = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
-	unsigned int grid_size = gridDim.x * (blockDim.x * 2);
 
-	unsigned int thread_work_size;
-	unsigned int thread_offset;
-
-	thread_work_size = size / grid_size;
-	thread_offset = id * thread_work_size;
-	if (id == grid_size - 1) {
-		thread_work_size = size - thread_offset;
-	}
-
-    // first sum
+	// first sum
 	int t_sum = (id < size) ? in_array[id] : 0;
 	if (id + blockDim.x < size) {
-        // current reduce function is sum
+		// current reduce function is sum
 		t_sum = sum(in_array[id + blockDim.x], t_sum);
 	}
 
