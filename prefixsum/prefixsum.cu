@@ -68,14 +68,14 @@ __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 	// copy data back to main memory
 	// scan is exclusive, make it inclusive by left shifting elements
 	if (tid > 0) {
-		in_array[i] = shared[i + offset_i];
+		in_array[i - 1] = shared[i + offset_i];
 	} else {
 		// re-calc the last element, drop it in out array
 		in_array[size - 1] +=
 		    shared[size - 1 + CONFLICT_FREE_OFFSET(size - 1)];
 		out_array[blockIdx.x] = in_array[size - 1];
 	}
-	in_array[j] = shared[offset_j];
+	in_array[j - 1] = shared[offset_j];
 }
 
 __global__ void cuda_updatesum(int *array, int *update_array, int size)
@@ -95,7 +95,6 @@ __global__ void cuda_updatesum(int *array, int *update_array, int size)
 		shared[tid + blockDim.x] = array[id + blockDim.x] + op;
 		array[id + blockDim.x] = shared[tid + blockDim.x];
 	}
-
 }
 
 void prefixsum(int blocks, int threads, int *array_h, int size)
