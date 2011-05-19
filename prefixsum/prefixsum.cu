@@ -12,26 +12,28 @@
 #define LOG_NUM_BANKS 4
 #define CONFLICT_FREE_OFFSET(n) ((n) >> NUM_BANKS + (n) >> (2 * LOG_NUM_BANKS))
 
-#define NUM_BLOCKS 32
+#define NUM_BLOCKS 511
 #define BLOCK_SIZE 512
 
 __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 {
+	// this is still inefficient because 1/2 threads are unused
 	// shared should be sized to blockDim.x
 	extern __shared__ int shared[];
 
 	unsigned int tid = threadIdx.x;
+	unsigned int b_offset = blockIdx.x * blockDim.x;
 	unsigned int offset = 1;
 
 	int i = tid;
-	int j = tid + size / 2;
+	int j = tid + blockDim.x / 2;
 	int offset_i = CONFLICT_FREE_OFFSET(i);
 	int offset_j = CONFLICT_FREE_OFFSET(j);
-	shared[i + offset_i] = in_array[i];
-	shared[j + offset_j] = in_array[j];
+	shared[i + offset_i] = in_array[i + b_offset];
+	shared[j + offset_j] = in_array[j + b_offset];
 
 	// scan up
-	for (int s = (size >> 1); s > 0; s >>= 1) {
+	for (int s = (blockDim.x >> 1); s > 0; s >>= 1) {
 		__syncthreads();
 
 		if (tid < s) {
@@ -45,10 +47,11 @@ __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 	}
 
 	if (tid == 0) {
-		shared[size - 1 + CONFLICT_FREE_OFFSET(size - 1)] = 0;
+		shared[blockDim.x - 1 + CONFLICT_FREE_OFFSET(blockDim.x - 1)] =
+		    0;
 	}
 	// scan down
-	for (int s = 1; s < size; s <<= 1) {
+	for (int s = 1; s < blockDim.x; s <<= 1) {
 		offset >>= 1;
 		__syncthreads();
 
@@ -63,19 +66,21 @@ __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 		}
 	}
 	__syncthreads();
-	// exclusive scan, need to shift all elements left, sum last one
-
 	// copy data back to main memory
 	// scan is exclusive, make it inclusive by left shifting elements
-	if (tid > 0) {
-		in_array[i - 1] = shared[i + offset_i];
-	} else {
-		// re-calc the last element, drop it in out array
-		in_array[size - 1] +=
-		    shared[size - 1 + CONFLICT_FREE_OFFSET(size - 1)];
-		out_array[blockIdx.x] = in_array[size - 1];
+	if (tid < blockDim.x / 2) {
+		if (tid > 0) {
+			in_array[b_offset + i - 1] = shared[i + offset_i];
+		} else {
+			// re-calc the last element, drop it in out array
+			in_array[b_offset + blockDim.x - 1] +=
+			    shared[blockDim.x - 1 +
+				   CONFLICT_FREE_OFFSET(blockDim.x - 1)];
+			out_array[blockIdx.x] =
+			    in_array[b_offset + blockDim.x - 1];
+		}
+		in_array[b_offset + j - 1] = shared[j + offset_j];
 	}
-	in_array[j - 1] = shared[j + offset_j];
 }
 
 __global__ void cuda_updatesum(int *array, int *update_array, int size)
