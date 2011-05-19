@@ -25,12 +25,12 @@ __device__ int rand(int init0, int init1)
 
 __device__ int square(int op)
 {
-    return op * op;
+	return op * op;
 }
 
 __device__ int mul(int op0, int op1)
 {
-    return op0 * op1;
+	return op0 * op1;
 }
 
 __device__ int sum(int op0, int op1)
@@ -56,8 +56,7 @@ __global__ void map(int *array, int size)
 	if (id + blockDim.x < size) {
 		// do second operation
 		shared[tid + blockDim.x] = array[id + blockDim.x];
-		array[id + blockDim.x] =
-		    square(shared[tid + blockDim.x]);
+		array[id + blockDim.x] = square(shared[tid + blockDim.x]);
 	}
 }
 
