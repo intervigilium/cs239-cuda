@@ -139,11 +139,29 @@ int mapreduce(int blocks, int threads, int *array_h, int size)
 	return res;
 }
 
+int mapreduce_host(int *array_h, int size)
+{
+	int res = 0;
+
+	// map
+	for (int i = 0; i < size; i++) {
+		array_h[i] = array_h[i] * array_h[i];
+	}
+
+	// reduce
+	for (int i = 0; i < size; i++) {
+		res += array_h[i];
+	}
+
+	return res;
+}
+
 void usage(int which)
 {
 	switch (which) {
 	default:
-		printf("usage: mapreduce [-b blocks|-t threads] <filename>\n");
+		printf
+		    ("usage: mapreduce [-h|-b blocks|-t threads] <filename>\n");
 		break;
 	case 1:
 		printf("mapreduce input format:\nnum count\n1\n...\nn n\n");
@@ -185,15 +203,19 @@ int prepare_numbers(const char *filename, int **array)
 
 int main(int argc, char *argv[])
 {
-	int opt, blocks, threads, array_size, result;
+	int opt, host_mode, blocks, threads, array_size, result;
 	int *array;
 	char *filename;
 
 	// set options
+	host_mode = 0;
 	blocks = NUM_BLOCKS;
 	threads = BLOCK_SIZE;
-	while ((opt = getopt(argc, argv, "b:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:t:")) != -1) {
 		switch (opt) {
+		case 'h':
+			host_mode = 1;
+			break;
 		case 'b':
 			blocks = atoi(optarg);
 			break;
@@ -227,9 +249,13 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	printf("mapreduce using CUDA\n");
-
-	result = mapreduce(blocks, threads, array, array_size);
+	if (host_mode) {
+		printf("mapreduce using host\n");
+		result = mapreduce_host(array, array_size);
+	} else {
+		printf("mapreduce using CUDA\n");
+		result = mapreduce(blocks, threads, array, array_size);
+	}
 
 	printf("mapreduce result: %d\n", result);
 	free(array);
