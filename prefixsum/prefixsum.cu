@@ -103,16 +103,20 @@ void prefixsum(int blocks, int threads, int *array_h, int size)
 	dim3 dim_grid(blocks, 1, 1);
 	dim3 dim_block(threads, 1, 1);
 
+	// allocate temp, block sum, and device arrays
+	cudaMalloc((void **)&tmp_d, blocks * sizeof(int));
+	cudaMalloc((void **)&out_array_d, blocks * sizeof(int));
 	cudaMalloc((void **)&array_d, size * sizeof(int));
 	cudaMemcpy(array_d, array_h, size * sizeof(int),
 		   cudaMemcpyHostToDevice);
 
-	cudaMalloc((void **)&out_array_d, blocks * sizeof(int));
-	cudaMalloc((void **)&tmp_d, blocks * sizeof(int));
+	// do prefix sum for each block
 	cuda_prefixsum <<< dim_grid, dim_block,
 	    threads * sizeof(int) >>> (array_d, out_array_d, size);
+	// do prefix sum for block sum
 	cuda_prefixsum <<< dim_grid, dim_block,
 	    threads * sizeof(int) >>> (out_array_d, tmp_d, blocks);
+	// update original array using block sum
 	cuda_updatesum <<< dim_grid, dim_block,
 	    threads * sizeof(int) >>> (array_d, out_array_d, size);
 
