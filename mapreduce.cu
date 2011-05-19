@@ -182,7 +182,7 @@ int prepare_numbers(const char *filename, int **array)
 int main(int argc, char *argv[])
 {
 	int opt, blocks, threads, array_size, result;
-	int *array_h, *array_d, *result_d, *cache_d;
+	int *array;
 	char *filename;
 
 	// set options
@@ -201,8 +201,6 @@ int main(int argc, char *argv[])
 			return 0;
 		}
 	}
-	dim3 dim_grid(blocks, 1, 1);
-	dim3 dim_block(threads, 1, 1);
 
 	// check to make sure we are feeding in correct number of args
 	if (argc == optind + 1) {
@@ -213,45 +211,24 @@ int main(int argc, char *argv[])
 	}
 
 	// read file
-	array_h = NULL;
-	array_size = prepare_numbers(filename, &array_h);
+	array = NULL;
+	array_size = prepare_numbers(filename, &array);
 	if (array_size < 0) {
-		free(array_h);
+		free(array);
 		usage(1);
 		return 0;
 	} else if (array_size <= blocks * threads) {
-		free(array_h);
+		free(array);
 		usage(2);
 		return 0;
 	}
 
-	result = 0;
 	printf("mapreduce using CUDA\n");
-	// move to device
-	cudaMalloc((void **)&array_d, array_size * sizeof(int));
-	cudaMemcpy(array_d, array_h, array_size * sizeof(int),
-		   cudaMemcpyHostToDevice);
 
-	// allocate device only structures
-	cudaMalloc((void **)&result_d, sizeof(int));
-	cudaMalloc((void **)&cache_d, blocks * sizeof(int));
-
-	// run kernel
-	map <<< dim_grid, dim_block, threads * sizeof(int) >>> (array_d,
-								array_size,
-								cache_d,
-								result_d);
-
-	// retrieve result
-	cudaMemcpy(&result, result_d, sizeof(int), cudaMemcpyDeviceToHost);
-
-	// cleanup
-	cudaFree(array_d);
-	cudaFree(result_d);
-	cudaFree(cache_d);
+	result = mapreduce(blocks, threads, array, array_size);
 
 	printf("mapreduce result: %d\n", result);
-	free(array_h);
+	free(array);
 
 	return 0;
 }
