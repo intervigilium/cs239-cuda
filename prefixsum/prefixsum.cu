@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
 	host_mode = 0;
 	blocks = NUM_BLOCKS;
 	threads = BLOCK_SIZE;
-	while ((opt = getopt(argc, argv, "h:b:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "hb:t:")) != -1) {
 		switch (opt) {
 		case 'h':
 			host_mode = 1;
