@@ -70,7 +70,6 @@ __global__ void reduce(int *in_array, int *out_array, int size, int *result)
 	unsigned int id = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
 	unsigned int grid_size = gridDim.x * (blockDim.x * 2);
 
-	unsigned int i;
 	unsigned int thread_work_size;
 	unsigned int thread_offset;
 
@@ -81,10 +80,10 @@ __global__ void reduce(int *in_array, int *out_array, int size, int *result)
 	}
 
     // first sum
-	int t_sum = (i < n) ? in_array[i] : 0;
-	if (i + blockDim.x < n) {
+	int t_sum = (id < size) ? in_array[id] : 0;
+	if (id + blockDim.x < size) {
         // current reduce function is sum
-		t_sum = sum(in_array[i + blockDim.x], t_sum);
+		t_sum = sum(in_array[id + blockDim.x], t_sum);
 	}
 
 	shared[tid] = t_sum;
@@ -94,8 +93,8 @@ __global__ void reduce(int *in_array, int *out_array, int size, int *result)
 	for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
 		if (tid < s) {
             // current reduce function is sum
-            t_sum = sum(t_sum, sdata[tid + s]);
-            sdata[tid = t_sum];
+            t_sum = sum(t_sum, shared[tid + s]);
+            shared[tid = t_sum];
 		}
 		__syncthreads();
 	}
