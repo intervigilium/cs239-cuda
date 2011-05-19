@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#define NUM_BLOCKS 8
+#define NUM_BLOCKS 32
 #define BLOCK_SIZE 512
 
 // define map/reduce function type
@@ -167,7 +167,7 @@ void usage(int which)
 		printf("mapreduce input format:\nnum count\n1\n...\nn n\n");
 		break;
 	case 2:
-		printf("mapreduce requires numbers >= threads*blocks\n");
+		printf("mapreduce requires numbers <= threads*blocks\n");
 		break;
 	}
 }
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 		free(array);
 		usage(1);
 		return 0;
-	} else if (array_size <= blocks * threads) {
+	} else if (array_size >= blocks * threads) {
 		free(array);
 		usage(2);
 		return 0;
