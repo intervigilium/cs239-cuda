@@ -83,18 +83,15 @@ __global__ void cuda_updatesum(int *array, int *update_array, int size)
 	extern __shared__ int shared[];
 
 	unsigned int tid = threadIdx.x;
-	unsigned int id = blockIdx.x * (blockDim.x * 2) + threadIdx.x;
+	unsigned int id = blockIdx.x * blockDim.x + threadIdx.x;
+	int op = 0;
 
-	int op = update_array[blockIdx.x];
+	if (blockIdx.x > 0) {
+		op = update_array[blockIdx.x - 1];
+	}
 
-	if (id < size) {
-		shared[tid] = array[id] + op;
-		array[id + blockDim.x] = shared[tid + blockDim.x];
-	}
-	if (id + blockDim.x < size) {
-		shared[tid + blockDim.x] = array[id + blockDim.x] + op;
-		array[id + blockDim.x] = shared[tid + blockDim.x];
-	}
+	shared[tid] = array[id] + op;
+	array[id] = shared[tid];
 }
 
 void prefixsum(int blocks, int threads, int *array_h, int size)
