@@ -103,8 +103,7 @@ void usage(int which)
 {
 	switch (which) {
 	default:
-		printf
-		    ("usage: prefixsum [-h|-b blocks|-t threads] max\n");
+		printf("usage: prefixsum [-h|-b blocks|-t threads] max\n");
 		break;
 	case 1:
 		printf("prefixsum requires numbers <= threads*blocks\n");
@@ -118,7 +117,7 @@ void prepare_numbers(int **array, int count)
 
 	// load array
 	for (int i = 0; i < count; i++) {
-		numbers[i] = i; 
+		numbers[i] = i;
 	}
 
 	*array = numbers;
@@ -126,9 +125,9 @@ void prepare_numbers(int **array, int count)
 
 void print_array(int *array, int count)
 {
-    for (int i = 0; i < count; i++) {
-        printf("%d\n", array[i]);
-    }
+	for (int i = 0; i < count; i++) {
+		printf("%d\n", array[i]);
+	}
 }
 
 int main(int argc, char *argv[])
@@ -159,18 +158,17 @@ int main(int argc, char *argv[])
 
 	// check to make sure we are feeding in correct number of args
 	if (argc == optind + 1) {
-        max = atoi(argv[optind]);
+		max = atoi(argv[optind]);
 	} else {
 		usage(0);
 		return 0;
 	}
-    // need more blocks * threads than input numbers
+	// need more blocks * threads than input numbers
 	if (max >= blocks * threads) {
-        usage(1);
-        return 0;
-    }
-
-    // pre-init numbers
+		usage(1);
+		return 0;
+	}
+	// pre-init numbers
 	array = NULL;
 	prepare_numbers(&array, max);
 
