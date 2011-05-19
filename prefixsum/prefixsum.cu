@@ -31,7 +31,7 @@ __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 	shared[j + offset_j] = in_array[j];
 
 	// scan up
-	for (int s = size >> 1; s > 0; s >>= 1) {
+	for (int s = (size >> 1); s > 0; s >>= 1) {
 		__syncthreads();
 
 		if (tid < s) {
@@ -75,7 +75,7 @@ __global__ void cuda_prefixsum(int *in_array, int *out_array, int size)
 		    shared[size - 1 + CONFLICT_FREE_OFFSET(size - 1)];
 		out_array[blockIdx.x] = in_array[size - 1];
 	}
-	in_array[j - 1] = shared[offset_j];
+	in_array[j - 1] = shared[j + offset_j];
 }
 
 __global__ void cuda_updatesum(int *array, int *update_array, int size)
