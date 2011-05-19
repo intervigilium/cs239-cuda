@@ -1,4 +1,6 @@
-obj/*
-release/*
+mapreduce/obj/*
+mapreduce/release/*
+prefixsum/obj/*
+prefixsum/release/*
 *.cubin
 numbers
