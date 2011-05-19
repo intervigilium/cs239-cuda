@@ -78,9 +78,9 @@ __global__ void reduce(int *in_array, int *out_array, int size)
 	// do reduction in shared mem
 	for (unsigned int s = blockDim.x / 2; s > 0; s >>= 1) {
 		if (tid < s) {
-            // current reduce function is sum
-            t_sum = sum(t_sum, shared[tid + s]);
-            shared[tid = t_sum];
+			// current reduce function is sum
+			t_sum = sum(t_sum, shared[tid + s]);
+			shared[tid] = t_sum;
 		}
 		__syncthreads();
 	}
