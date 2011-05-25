@@ -11,6 +11,6 @@ Group members:
 
 CUDA Presentation.pdf: presentation done by William Chiu
 mapreduce-wenchuan: mapreduce version presented in class by Wenchuan Weng
-mapreduce: memory access optimized version based on previous work by Ethan Chen
+mapreduce-ethan: memory access optimized version based on previous work by Ethan Chen
     -Not presented in class
 prefixsum: parallel prefix sum presented in class by Ethan Chen
